@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>國小國語數學練習題</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">台灣國小題型練習</p>
+          <h1 id="page-title">國語與數學 20 題小測驗</h1>
+          <p class="intro">選擇一年級或二年級，再挑國語或數學。每次開啟或重新整理都會重新抽題，完成後交卷會立即批改。</p>
+        </div>
+        <div class="score-board" aria-live="polite">
+          <span>本次成績</span>
+          <strong id="scoreText">尚未交卷</strong>
+        </div>
+      </section>
+
+      <section class="toolbar" aria-label="測驗設定">
+        <div class="segmented" role="tablist" aria-label="選擇科目">
+          <button class="subject-button active" type="button" data-subject="math" role="tab" aria-selected="true">數學</button>
+          <button class="subject-button" type="button" data-subject="chinese" role="tab" aria-selected="false">國語</button>
+        </div>
+        <div class="segmented" role="tablist" aria-label="選擇年級">
+          <button class="grade-button active" type="button" data-grade="g1" role="tab" aria-selected="true">一年級</button>
+          <button class="grade-button" type="button" data-grade="g2" role="tab" aria-selected="false">二年級</button>
+        </div>
+        <label class="standard-select-label" for="standardSelect">
+          <span>課綱範圍</span>
+          <select id="standardSelect"></select>
+        </label>
+        <button id="refreshBtn" class="secondary-button" type="button">重新抽題</button>
+      </section>
+
+      <section class="status-strip" aria-live="polite">
+        <div>
+          <span class="label">目前科目</span>
+          <strong id="subjectName">數學</strong>
+        </div>
+        <div>
+          <span class="label">目前年級</span>
+          <strong id="gradeName">一年級</strong>
+        </div>
+        <div>
+          <span class="label">題數</span>
+          <strong id="questionCountText">20 題</strong>
+        </div>
+        <div>
+          <span class="label">已作答</span>
+          <strong id="answeredCount">0 題</strong>
+        </div>
+        <div>
+          <span class="label">課綱範圍</span>
+          <strong id="standardName">全部</strong>
+        </div>
+      </section>
+
+      <form id="quizForm" class="quiz-list"></form>
+
+      <section class="actions" aria-label="測驗操作">
+        <button id="submitBtn" class="primary-button" type="button">交卷批改</button>
+        <button id="resetBtn" class="secondary-button" type="button">清除答案</button>
+      </section>
+      <section id="resultPanel" class="result-panel" aria-live="polite" hidden>
+        <span>本次成績</span>
+        <strong id="resultText">尚未交卷</strong>
+      </section>
+
+      <section class="history-panel" aria-labelledby="historyTitle">
+        <div class="history-head">
+          <div>
+            <p class="eyebrow">個人學習紀錄</p>
+            <h2 id="historyTitle">最近練習</h2>
+          </div>
+          <button id="exportHistoryBtn" class="secondary-button" type="button">匯出紀錄</button>
+        </div>
+        <div id="historyStats" class="history-stats" aria-live="polite"></div>
+        <div id="historyList" class="history-list" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <template id="questionTemplate">
+      <article class="question-card">
+        <div class="question-topline">
+          <span class="question-number"></span>
+          <span class="question-tag"></span>
+        </div>
+        <h2 class="question-title"></h2>
+        <div class="options"></div>
+        <p class="feedback" aria-live="polite"></p>
+      </article>
+    </template>
+
+    <script src="question-bank.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
