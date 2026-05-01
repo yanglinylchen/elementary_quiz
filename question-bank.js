@@ -77,7 +77,7 @@ function mathG1Questions() {
     makeQuestion("十格板", "十格板中有幾格沒有塗色？", "3", numberOptions(3), tenFrameImage(7)),
     makeQuestion("看圖算錢", "圖上的錢幣合起來是多少元？", "12 元", itemOptions(12, "元"), coinsImage([10, 1, 1])),
     makeQuestion("看圖算錢", "圖上的錢幣合起來是多少元？（第 2 題）", "15 元", itemOptions(15, "元"), coinsImage([10, 5])),
-    makeQuestion("形狀", "下列哪一個圖形有 3 個邊？", "三角形", ["三角形", "正方形", "長方形", "圓形"]),
+    makeQuestion("形狀", "下列哪一個圖形的邊剛好是 3 個？", "三角形", ["三角形", "正方形", "長方形", "圓形"]),
     makeQuestion("形狀", "下列哪一個圖形沒有角？", "圓形", ["三角形", "正方形", "圓形", "長方形"]),
     makeQuestion("長短", "鉛筆比橡皮擦長，橡皮擦比尺短。誰最長？", "尺", ["鉛筆", "橡皮擦", "尺", "無法知道"]),
     makeQuestion("分類", "下列哪一組都是數字？", "1、3、5", ["1、3、5", "大、小、多", "紅、黃、藍", "貓、狗、鳥"]),
@@ -445,15 +445,34 @@ function removeAmbiguousShapeChoices(bank) {
     Object.values(subject.grades).forEach((grade) => {
       grade.questions = grade.questions.map((question) => {
         const hasSquareAndRectangle = question.options?.includes("正方形") && question.options?.includes("長方形");
-        if (hasSquareAndRectangle && /4 個角|四個角|4個角/.test(question.q)) {
-          return {
-            ...question,
-            q: question.answer === "正方形"
-              ? question.q.replace(/4 個角|四個角|4個角/g, "4 個一樣大的角，且 4 個邊一樣長")
-              : question.q.replace(/4 個角|四個角|4個角/g, "4 個一樣大的角，且通常有 2 條長邊和 2 條短邊")
+        let nextQuestion = question;
+        if (/有 3 個邊|有3個邊|有三個邊/.test(nextQuestion.q)) {
+          nextQuestion = {
+            ...nextQuestion,
+            q: nextQuestion.q
+              .replace(/有 3 個邊/g, "的邊剛好是 3 個")
+              .replace(/有3個邊/g, "的邊剛好是 3 個")
+              .replace(/有三個邊/g, "的邊剛好是三個")
           };
         }
-        return question;
+        if (/有 4 個一樣長的邊|有4個一樣長的邊|有四個一樣長的邊/.test(nextQuestion.q)) {
+          nextQuestion = {
+            ...nextQuestion,
+            q: nextQuestion.q
+              .replace(/有 4 個一樣長的邊/g, "的 4 個邊都一樣長")
+              .replace(/有4個一樣長的邊/g, "的 4 個邊都一樣長")
+              .replace(/有四個一樣長的邊/g, "的四個邊都一樣長")
+          };
+        }
+        if (hasSquareAndRectangle && /4 個角|四個角|4個角/.test(nextQuestion.q)) {
+          return {
+            ...nextQuestion,
+            q: nextQuestion.answer === "正方形"
+              ? nextQuestion.q.replace(/4 個角|四個角|4個角/g, "4 個一樣大的角，且 4 個邊一樣長")
+              : nextQuestion.q.replace(/4 個角|四個角|4個角/g, "4 個一樣大的角，且通常有 2 條長邊和 2 條短邊")
+          };
+        }
+        return nextQuestion;
       });
     });
   });
@@ -512,9 +531,9 @@ function buildMathQuestion(gradeKey, standard, index) {
 
   if (standard === "S-1-2") {
     const prompts = [
-      ["下列哪一個圖形有 3 個邊？", "三角形", ["三角形", "正方形", "圓形", "橢圓形"]],
+      ["下列哪一個圖形的邊剛好是 3 個？", "三角形", ["三角形", "正方形", "圓形", "橢圓形"]],
       ["下列哪一個圖形沒有角？", "圓形", ["圓形", "三角形", "正方形", "長方形"]],
-      ["下列哪一個圖形有 4 個一樣長的邊？", "正方形", ["正方形", "長方形", "三角形", "圓形"]],
+      ["下列哪一個圖形的 4 個邊都一樣長？", "正方形", ["正方形", "長方形", "三角形", "圓形"]],
       ["下列哪一個圖形通常有 2 條長邊和 2 條短邊？", "長方形", ["長方形", "正方形", "三角形", "圓形"]]
     ];
     const [q, answer, options] = prompts[index % prompts.length];

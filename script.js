@@ -1,5 +1,6 @@
 const QUESTION_COUNT = 20;
 const HISTORY_KEY = "elementaryQuizHistory.v1";
+const CELEBRATION_THRESHOLD = 90;
 
 const questionBank = window.questionBank;
 
@@ -8,6 +9,8 @@ let currentGrade = "g1";
 let currentStandard = "all";
 let currentQuestions = [];
 let currentAttemptId = "";
+let retrySourceQuestions = [];
+let isRetryMode = false;
 let submitted = false;
 
 const quizForm = document.querySelector("#quizForm");
@@ -26,6 +29,8 @@ const submitBtn = document.querySelector("#submitBtn");
 const resetBtn = document.querySelector("#resetBtn");
 const resultPanel = document.querySelector("#resultPanel");
 const resultText = document.querySelector("#resultText");
+const encouragementText = document.querySelector("#encouragementText");
+const retryWrongBtn = document.querySelector("#retryWrongBtn");
 const historyStats = document.querySelector("#historyStats");
 const historyList = document.querySelector("#historyList");
 const exportHistoryBtn = document.querySelector("#exportHistoryBtn");
@@ -89,14 +94,22 @@ function groupByStandard(questions) {
 function renderQuiz() {
   submitted = false;
   currentAttemptId = "";
+  retrySourceQuestions = [];
+  isRetryMode = false;
   currentQuestions = pickQuestions(currentSubject, currentGrade);
+  renderCurrentQuiz();
+}
+
+function renderCurrentQuiz() {
   quizForm.innerHTML = "";
   subjectName.textContent = questionBank[currentSubject].name;
-  gradeName.textContent = questionBank[currentSubject].grades[currentGrade].name;
+  gradeName.textContent = isRetryMode ? `${questionBank[currentSubject].grades[currentGrade].name}錯題重練` : questionBank[currentSubject].grades[currentGrade].name;
   standardName.textContent = getStandardLabel(currentStandard);
   questionCountText.textContent = `${currentQuestions.length} 題`;
   scoreText.textContent = "尚未交卷";
   resultText.textContent = "尚未交卷";
+  encouragementText.textContent = "";
+  retryWrongBtn.hidden = true;
   resultPanel.hidden = true;
   answeredCount.textContent = "0 題";
 
@@ -254,6 +267,7 @@ function submitQuiz() {
   submitted = true;
   let correctCount = 0;
   const wrongItems = [];
+  const wrongQuestions = [];
 
   currentQuestions.forEach((question, index) => {
     const card = quizForm.querySelector(`[data-index="${index}"]`);
@@ -288,6 +302,7 @@ function submitQuiz() {
         answer: question.answer,
         userAnswer: selectedValue || "未作答"
       });
+      wrongQuestions.push(question);
       feedback.textContent = selectedValue ? `答錯了，正確答案是：${question.answer}` : `尚未作答，正確答案是：${question.answer}`;
       feedback.className = "feedback bad";
     }
@@ -298,10 +313,53 @@ function submitQuiz() {
   const score = `${scoreNumber} 分`;
   scoreText.textContent = score;
   resultText.textContent = score;
+  encouragementText.textContent = getEncouragement(scoreNumber);
+  retrySourceQuestions = wrongQuestions;
+  retryWrongBtn.hidden = wrongQuestions.length === 0;
   resultPanel.hidden = false;
+  playResultSound(scoreNumber);
   saveAttempt(scoreNumber, correctCount, wrongItems);
   renderHistory();
   resultPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function getEncouragement(scoreNumber) {
+  if (scoreNumber >= CELEBRATION_THRESHOLD) {
+    const messages = ["太棒了，這次表現很穩！", "做得很好，繼續保持！", "很厲害，學習狀態很好！"];
+    return messages[Math.floor(Math.random() * messages.length)];
+  }
+
+  const messages = ["沒關係，訂正後再挑戰一次！", "差一點點，看看錯題再加油！", "繼續練習，下一次會更好！"];
+  return messages[Math.floor(Math.random() * messages.length)];
+}
+
+function playResultSound(scoreNumber) {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) {
+    return;
+  }
+
+  const context = new AudioContext();
+  const notes = scoreNumber >= CELEBRATION_THRESHOLD
+    ? [523.25, 659.25, 783.99, 1046.5]
+    : [392, 440, 523.25];
+
+  notes.forEach((frequency, index) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const start = context.currentTime + index * 0.12;
+    oscillator.type = scoreNumber >= CELEBRATION_THRESHOLD ? "triangle" : "sine";
+    oscillator.frequency.setValueAtTime(frequency, start);
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(0.12, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.18);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.2);
+  });
+
+  setTimeout(() => context.close(), 900);
 }
 
 function saveAttempt(scoreNumber, correctCount, wrongItems) {
@@ -314,7 +372,7 @@ function saveAttempt(scoreNumber, correctCount, wrongItems) {
     id: currentAttemptId,
     createdAt: new Date().toISOString(),
     subject: questionBank[currentSubject].name,
-    grade: questionBank[currentSubject].grades[currentGrade].name,
+    grade: isRetryMode ? `${questionBank[currentSubject].grades[currentGrade].name}錯題重練` : questionBank[currentSubject].grades[currentGrade].name,
     score: scoreNumber,
     correct: correctCount,
     total: currentQuestions.length,
@@ -332,6 +390,23 @@ function saveAttempt(scoreNumber, correctCount, wrongItems) {
   }
 
   localStorage.setItem(HISTORY_KEY, JSON.stringify(records.slice(0, 200)));
+}
+
+function retryWrongQuestions() {
+  if (retrySourceQuestions.length === 0) {
+    return;
+  }
+
+  submitted = false;
+  currentAttemptId = "";
+  isRetryMode = true;
+  currentQuestions = retrySourceQuestions.map((question) => ({
+    ...question,
+    options: question.options ? shuffle(question.options) : []
+  }));
+  retrySourceQuestions = [];
+  renderCurrentQuiz();
+  quizForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function loadHistory() {
@@ -495,6 +570,8 @@ function clearAnswers() {
   quizForm.reset();
   scoreText.textContent = "尚未交卷";
   resultText.textContent = "尚未交卷";
+  encouragementText.textContent = "";
+  retryWrongBtn.hidden = true;
   resultPanel.hidden = true;
   answeredCount.textContent = "0 題";
   quizForm.querySelectorAll(".question-card").forEach((card) => {
@@ -559,7 +636,14 @@ refreshBtn.addEventListener("click", renderQuiz);
 submitBtn.addEventListener("click", submitQuiz);
 resetBtn.addEventListener("click", clearAnswers);
 exportHistoryBtn.addEventListener("click", exportHistory);
+retryWrongBtn.addEventListener("click", retryWrongQuestions);
 
 updateStandardOptions();
 renderHistory();
 renderQuiz();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js");
+  });
+}

@@ -3,7 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#174d48">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="國小練習">
     <title>國小國語數學練習題</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -66,8 +72,14 @@
         <button id="resetBtn" class="secondary-button" type="button">清除答案</button>
       </section>
       <section id="resultPanel" class="result-panel" aria-live="polite" hidden>
-        <span>本次成績</span>
-        <strong id="resultText">尚未交卷</strong>
+        <div>
+          <span>本次成績</span>
+          <strong id="resultText">尚未交卷</strong>
+        </div>
+        <div class="result-message">
+          <p id="encouragementText"></p>
+          <button id="retryWrongBtn" class="secondary-button" type="button" hidden>錯題重練</button>
+        </div>
       </section>
 
       <section class="history-panel" aria-labelledby="historyTitle">
