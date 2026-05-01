@@ -111,7 +111,7 @@ h1 {
 
 .segmented {
   display: inline-grid;
-  grid-template-columns: repeat(2, minmax(96px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--line);
@@ -335,6 +335,41 @@ h1 {
   border: 1px dashed #b8c6c1;
   border-radius: 8px;
   background: white;
+}
+
+.scene {
+  display: inline-grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: white;
+  font-size: 3rem;
+}
+
+.scene-sunny {
+  background: #fff4bf;
+}
+
+.scene-rainy {
+  background: #dcedff;
+}
+
+.scene-cloudy {
+  background: #eef1f2;
+}
+
+.scene-redLight {
+  background: #26312f;
+}
+
+.scene-crosswalk {
+  background: repeating-linear-gradient(90deg, #ffffff 0 16px, #26312f 16px 24px);
+}
+
+.scene-plant {
+  background: #eaf7e3;
 }
 
 .options {

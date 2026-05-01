@@ -157,7 +157,7 @@ function updateStandardOptions() {
   }
 
   standardSelect.innerHTML = [
-    `<option value="all">全部課綱</option>`,
+    `<option value="all">全部單元</option>`,
     ...standards.map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`)
   ].join("");
   standardSelect.value = currentStandard;
@@ -243,7 +243,27 @@ function renderQuestionImage(image) {
     return frame;
   }
 
+  if (image.type === "scene") {
+    frame.append(renderScene(image.scene));
+    return frame;
+  }
+
   return frame;
+}
+
+function renderScene(scene) {
+  const sceneFrame = document.createElement("span");
+  sceneFrame.className = `scene scene-${scene}`;
+  const labels = {
+    sunny: "☀️",
+    rainy: "🌧️",
+    cloudy: "☁️",
+    redLight: "🔴",
+    crosswalk: "🚸",
+    plant: "🌱"
+  };
+  sceneFrame.textContent = labels[scene] || "?";
+  return sceneFrame;
 }
 
 function escapeHtml(value) {
@@ -541,6 +561,15 @@ function isChoiceStyleQuestion(question) {
 }
 
 const standardDescriptions = {
+  "M1-U1": "第一單元 數到100",
+  "M1-U2": "第二單元 18以內的加法",
+  "M1-U3": "第三單元 長度",
+  "M1-U4": "第四單元 18以內的減法",
+  "M1-U5": "第五單元 圖形和形體",
+  "M1-U6": "第六單元 幾月幾日",
+  "M1-U7": "第七單元 錢幣",
+  "M1-U8": "第八單元 二位數的加減",
+  "M1-U9": "第九單元 做紀錄",
   "N-1-1": "一百以內的數",
   "N-1-2": "加法和減法",
   "N-1-3": "基本加減法",

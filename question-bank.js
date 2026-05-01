@@ -22,6 +22,10 @@ function coinsImage(coins) {
   return { type: "coins", coins };
 }
 
+function sceneImage(scene) {
+  return { type: "scene", scene };
+}
+
 function uniqueByQuestion(questions) {
   const seen = new Set();
   return questions.filter((question) => {
@@ -354,15 +358,16 @@ function chineseG2Questions() {
 
 function mathStandard(question, gradeKey) {
   if (gradeKey === "g1") {
-    if (/看圖數數|比較大小|順序/.test(question.tag)) return ["N-1-1", 10];
-    if (/加法|減法|應用題|位置/.test(question.tag)) return ["N-1-2", 20];
-    if (/10 以內|20 以內|基本/.test(question.tag)) return ["N-1-3", 30];
-    if (/錢/.test(question.tag)) return ["N-1-4", 40];
-    if (/長短/.test(question.tag)) return ["S-1-1", 50];
-    if (/時間/.test(question.tag)) return ["N-1-6", 60];
-    if (/形狀|圖形/.test(question.tag)) return ["S-1-2", 70];
-    if (/分類/.test(question.tag)) return ["D-1-1", 80];
-    return ["N-1-1", 90];
+    if (/看圖數數|比較大小|順序|數數/.test(question.tag)) return ["M1-U1", 10];
+    if (/錢/.test(question.tag)) return ["M1-U7", 70];
+    if (/長短|長度/.test(question.tag)) return ["M1-U3", 30];
+    if (/時間|幾月|幾日/.test(question.tag)) return ["M1-U6", 60];
+    if (/形狀|圖形/.test(question.tag)) return ["M1-U5", 50];
+    if (/分類|紀錄|記錄/.test(question.tag)) return ["M1-U9", 90];
+    if (/二位數/.test(question.tag)) return ["M1-U8", 80];
+    if (/減法/.test(question.tag) || /送給|還剩|飛走/.test(question.q)) return ["M1-U4", 40];
+    if (/加法|應用題|位置/.test(question.tag)) return ["M1-U2", 20];
+    return ["M1-U1", 10];
   }
 
   if (/看圖數數|位值|比較大小|百數/.test(question.tag)) return ["N-2-1", 10];
@@ -407,7 +412,7 @@ function applyStandards(bank) {
 
 const curriculumTargets = {
   math: {
-    g1: ["N-1-1", "N-1-2", "N-1-3", "N-1-4", "N-1-6", "S-1-1", "S-1-2", "D-1-1"],
+    g1: ["M1-U1", "M1-U2", "M1-U3", "M1-U4", "M1-U5", "M1-U6", "M1-U7", "M1-U8", "M1-U9"],
     g2: ["N-2-1", "N-2-2", "N-2-6", "N-2-7", "N-2-10", "N-2-12", "N-2-13", "S-2-1", "R-2-1"]
   },
   chinese: {
@@ -435,6 +440,21 @@ function padCurriculumStandards(bank) {
           cursor += 1;
         }
       });
+      standards.forEach((standard, standardIndex) => {
+        let localIndex = 0;
+        grade.questions = grade.questions.map((question) => {
+          if (question.standard !== standard) {
+            return question;
+          }
+          const next = {
+            ...question,
+            sequence: (standardIndex + 1) * 100000 + localIndex
+          };
+          localIndex += 1;
+          return next;
+        });
+      });
+      grade.questions.sort((a, b) => a.sequence - b.sequence);
     });
   });
   return bank;
@@ -491,6 +511,75 @@ function buildMathQuestion(gradeKey, standard, index) {
   const a = (index % 9) + 1;
   const b = ((index * 2) % 9) + 1;
   const c = ((index * 3) % 9) + 1;
+
+  if (standard === "M1-U1") {
+    const value = (index % 99) + 1;
+    if (index % 4 === 0) return makeQuestion("數到100", `從 ${a} 往後數 ${b} 個數，會數到哪一個？（練習 ${n}）`, a + b, numberOptions(a + b));
+    if (index % 4 === 1) return makeQuestion("數到100", `下列哪一個數最大？（練習 ${n}）`, Math.max(value, value + 3, value + 8, value + 1), [value, value + 3, value + 8, value + 1]);
+    if (index % 4 === 2) return makeQuestion("數到100", `${value} 的後一個數是多少？（練習 ${n}）`, value + 1, numberOptions(value + 1));
+    return makeQuestion("看圖數數", `圖上有幾個蘋果？（練習 ${n}）`, a, numberOptions(a), emojiImage("🍎", a));
+  }
+
+  if (standard === "M1-U2") {
+    const x = (index % 9) + 1;
+    const y = ((index * 2) % 9) + 1;
+    if (index % 2 === 0) return makeQuestion("18以內的加法", `${x} + ${y} =？（練習 ${n}）`, x + y, numberOptions(x + y));
+    return makeQuestion("18以內的加法", `小安有 ${x} 顆糖，媽媽又給他 ${y} 顆，現在共有幾顆？（練習 ${n}）`, `${x + y} 顆`, itemOptions(x + y, "顆"));
+  }
+
+  if (standard === "M1-U3") {
+    const items = [["鉛筆", "尺", "橡皮擦"], ["繩子", "吸管", "牙籤"], ["桌子", "椅子", "書本"]];
+    const [longest, middle, shortest] = items[index % items.length];
+    return makeQuestion("長度", `${longest}比${middle}長，${middle}比${shortest}長。誰最長？（練習 ${n}）`, longest, [longest, middle, shortest, "無法知道"]);
+  }
+
+  if (standard === "M1-U4") {
+    const x = (index % 9) + 1;
+    const y = ((index * 2) % 8) + 1;
+    if (index % 2 === 0) return makeQuestion("18以內的減法", `${x + y} - ${y} =？（練習 ${n}）`, x, numberOptions(x));
+    return makeQuestion("18以內的減法", `小美有 ${x + y} 張貼紙，送給朋友 ${y} 張，還剩幾張？（練習 ${n}）`, `${x} 張`, itemOptions(x, "張"));
+  }
+
+  if (standard === "M1-U5") {
+    const prompts = [
+      ["下列哪一個圖形的邊剛好是 3 個？", "三角形", ["三角形", "正方形", "圓形", "橢圓形"]],
+      ["下列哪一個圖形沒有角？", "圓形", ["圓形", "三角形", "正方形", "長方形"]],
+      ["下列哪一個圖形的 4 個邊都一樣長？", "正方形", ["正方形", "長方形", "三角形", "圓形"]],
+      ["下列哪一個圖形通常有 2 條長邊和 2 條短邊？", "長方形", ["長方形", "正方形", "三角形", "圓形"]]
+    ];
+    const [q, answer, options] = prompts[index % prompts.length];
+    return makeQuestion("圖形和形體", `${q}（練習 ${n}）`, answer, options);
+  }
+
+  if (standard === "M1-U6") {
+    const month = (index % 12) + 1;
+    const day = (index % 28) + 1;
+    if (index % 2 === 0) return makeQuestion("幾月幾日", `${month} 月 ${day} 日的後一天是幾月幾日？（練習 ${n}）`, `${month} 月 ${day + 1} 日`, [`${month} 月 ${day + 1} 日`, `${month} 月 ${day} 日`, `${month} 月 ${Math.max(1, day - 1)} 日`, `${month === 12 ? 1 : month + 1} 月 ${day} 日`]);
+    return makeQuestion("幾月幾日", `一年有幾個月？（練習 ${n}）`, "12 個月", ["10 個月", "11 個月", "12 個月", "13 個月"]);
+  }
+
+  if (standard === "M1-U7") {
+    const sums = [[1, 1, 5], [10, 1, 1], [10, 5], [50, 10, 1], [10, 10, 5]];
+    const coins = sums[index % sums.length];
+    const total = coins.reduce((sum, coin) => sum + coin, 0);
+    return makeQuestion("錢幣", `圖上的錢幣合起來是多少元？（練習 ${n}）`, `${total} 元`, itemOptions(total, "元"), coinsImage(coins));
+  }
+
+  if (standard === "M1-U8") {
+    const x = 20 + (index % 60);
+    const y = 10 + ((index * 3) % 20);
+    if (index % 2 === 0) return makeQuestion("二位數的加減", `${x} + ${y} =？（練習 ${n}）`, x + y, numberOptions(x + y));
+    return makeQuestion("二位數的加減", `${x + y} - ${y} =？（練習 ${n}）`, x, numberOptions(x));
+  }
+
+  if (standard === "M1-U9") {
+    const apples = (index % 5) + 2;
+    const bananas = ((index * 2) % 5) + 1;
+    const grapes = ((index * 3) % 5) + 1;
+    const max = Math.max(apples, bananas, grapes);
+    const answer = max === apples ? "蘋果" : max === bananas ? "香蕉" : "葡萄";
+    return makeQuestion("做紀錄", `小安記錄水果數量：蘋果 ${apples} 個、香蕉 ${bananas} 根、葡萄 ${grapes} 串。哪一種最多？（練習 ${n}）`, answer, ["蘋果", "香蕉", "葡萄", "一樣多"]);
+  }
 
   if (standard === "N-1-1") {
     const value = (index % 99) + 1;
