@@ -440,6 +440,26 @@ function padCurriculumStandards(bank) {
   return bank;
 }
 
+function removeAmbiguousShapeChoices(bank) {
+  Object.values(bank).forEach((subject) => {
+    Object.values(subject.grades).forEach((grade) => {
+      grade.questions = grade.questions.map((question) => {
+        const hasSquareAndRectangle = question.options?.includes("正方形") && question.options?.includes("長方形");
+        if (hasSquareAndRectangle && /4 個角|四個角|4個角/.test(question.q)) {
+          return {
+            ...question,
+            q: question.answer === "正方形"
+              ? question.q.replace(/4 個角|四個角|4個角/g, "4 個一樣大的角，且 4 個邊一樣長")
+              : question.q.replace(/4 個角|四個角|4個角/g, "4 個一樣大的角，且通常有 2 條長邊和 2 條短邊")
+          };
+        }
+        return question;
+      });
+    });
+  });
+  return bank;
+}
+
 function buildSupplementQuestion(subjectKey, gradeKey, standard, index) {
   if (subjectKey === "math") {
     return buildMathQuestion(gradeKey, standard, index);
@@ -491,9 +511,14 @@ function buildMathQuestion(gradeKey, standard, index) {
   }
 
   if (standard === "S-1-2") {
-    const shapes = [["三角形", "3 個邊"], ["正方形", "4 個邊"], ["圓形", "沒有角"], ["長方形", "4 個角"]];
-    const [shape, clue] = shapes[index % shapes.length];
-    return makeQuestion("常見形體", `下列哪一個圖形有${clue}？（練習 ${n}）`, shape, ["三角形", "正方形", "長方形", "圓形"]);
+    const prompts = [
+      ["下列哪一個圖形有 3 個邊？", "三角形", ["三角形", "正方形", "圓形", "橢圓形"]],
+      ["下列哪一個圖形沒有角？", "圓形", ["圓形", "三角形", "正方形", "長方形"]],
+      ["下列哪一個圖形有 4 個一樣長的邊？", "正方形", ["正方形", "長方形", "三角形", "圓形"]],
+      ["下列哪一個圖形通常有 2 條長邊和 2 條短邊？", "長方形", ["長方形", "正方形", "三角形", "圓形"]]
+    ];
+    const [q, answer, options] = prompts[index % prompts.length];
+    return makeQuestion("常見形體", `${q}（練習 ${n}）`, answer, options);
   }
 
   if (standard === "D-1-1") {
@@ -579,4 +604,4 @@ const baseQuestionBank = applyStandards({
   }
 });
 
-window.questionBank = padCurriculumStandards(baseQuestionBank);
+window.questionBank = removeAmbiguousShapeChoices(padCurriculumStandards(baseQuestionBank));

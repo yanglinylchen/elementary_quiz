@@ -116,7 +116,7 @@ function renderQuiz() {
       options.classList.add("answer-area");
       options.innerHTML = `
         <label class="answer-label" for="q${index}-answer">填寫答案</label>
-        <input class="answer-input" type="text" name="q${index}" id="q${index}-answer" autocomplete="off" inputmode="text" placeholder="請輸入答案">
+        <input class="answer-input" type="text" name="q${index}" id="q${index}-answer" autocomplete="off" inputmode="numeric" pattern="[0-9０-９]*" enterkeyhint="done" placeholder="請輸入數字">
       `;
     } else {
       question.options.forEach((option, optionIndex) => {
